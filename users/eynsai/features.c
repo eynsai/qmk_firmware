@@ -545,17 +545,15 @@ void sk_ctrl_up_cb(superkey_state_t* superkey_state) {
     } else {
         clear_keyboard();
     }
-    if (superkey_state->interrupt_result == NO_INTERRUPT && superkey_state->timeout_result == NO_TIMEOUT) {
-        if (keyboard_state.oneshot_is_active[ONESHOT_CTRL]) {
-            oneshots_off_task();
-            if (keyboard_state.utilities_oneshot_state != UTILITIES_ONESHOT_STATE_OFF) {
-                utilities_oneshot_off_task();
-            }
-        } else {
-            oneshot_on_task(ONESHOT_CTRL);
-            if (keyboard_state.n_oneshots_active == 1) {
-                utilities_oneshot_on_task();
-            }
+    if (keyboard_state.oneshot_is_active[ONESHOT_CTRL]) {
+        oneshots_off_task();
+        if (keyboard_state.utilities_oneshot_state != UTILITIES_ONESHOT_STATE_OFF) {
+            utilities_oneshot_off_task();
+        }
+    } else if (superkey_state->interrupt_result == NO_INTERRUPT && superkey_state->timeout_result == NO_TIMEOUT) {
+        oneshot_on_task(ONESHOT_CTRL);
+        if (keyboard_state.n_oneshots_active == 1) {
+            utilities_oneshot_on_task();
         }
     }
 }
@@ -743,15 +741,13 @@ void sk_alt_up_cb(superkey_state_t* superkey_state) {
     keyboard_state.arrow_vertical_last_keycode_registered = KC_NO;
     keyboard_state.arrow_vertical_state = ARROW_STATE_CENTER;
 
-    // activate/deactivate oneshot if the key was tapped
-    if (superkey_state->interrupt_result == NO_INTERRUPT && superkey_state->timeout_result == NO_TIMEOUT) {
-        if (keyboard_state.oneshot_is_active[ONESHOT_ALT]) {
-            oneshots_off_task();
-        } else {
-            oneshot_on_task(ONESHOT_ALT);
-            if (keyboard_state.utilities_oneshot_state != UTILITIES_ONESHOT_STATE_OFF) {
-                utilities_oneshot_off_task();
-            }
+    if (keyboard_state.oneshot_is_active[ONESHOT_ALT]) {
+        oneshots_off_task();
+    }
+    else if (superkey_state->interrupt_result == NO_INTERRUPT && superkey_state->timeout_result == NO_TIMEOUT) {
+        oneshot_on_task(ONESHOT_ALT);
+        if (keyboard_state.utilities_oneshot_state != UTILITIES_ONESHOT_STATE_OFF) {
+            utilities_oneshot_off_task();
         }
     }
 }
@@ -946,20 +942,17 @@ void sk_gui_up_cb(superkey_state_t* superkey_state) {
     mouse_triggerable_modifier_off();
     layer_off(LAYER_FUNCTION);
 
-    // activate/deactivate oneshot if the key was tapped
     if (superkey_state->multitap_result == DOUBLE_TAP) {
         timeout_on(TIMEOUT_RESET_KEYBOARD);
     } else if (superkey_state->multitap_result == TRIPLE_TAP) {
         timeout_off(TIMEOUT_RESET_KEYBOARD);
         mouse_passthrough_send_reset();
+    } else if (keyboard_state.oneshot_is_active[ONESHOT_GUI]) {
+        oneshots_off_task();
     } else if (superkey_state->interrupt_result == NO_INTERRUPT && superkey_state->timeout_result == NO_TIMEOUT) {
-        if (keyboard_state.oneshot_is_active[ONESHOT_GUI]) {
-            oneshots_off_task();
-        } else {
-            oneshot_on_task(ONESHOT_GUI);
-            if (keyboard_state.utilities_oneshot_state != UTILITIES_ONESHOT_STATE_OFF) {
-                utilities_oneshot_off_task();
-            }
+        oneshot_on_task(ONESHOT_GUI);
+        if (keyboard_state.utilities_oneshot_state != UTILITIES_ONESHOT_STATE_OFF) {
+            utilities_oneshot_off_task();
         }
     }
 }
