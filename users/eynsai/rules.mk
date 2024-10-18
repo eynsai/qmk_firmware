@@ -11,6 +11,7 @@ OPT = 3  # -O? optimization
 
 # qmk features necessary for keymap
 KEY_OVERRIDE_ENABLE = yes
+OS_DETECTION_ENABLE = yes
 POINTING_DEVICE_ENABLE = yes
 POINTING_DEVICE_DRIVER = custom
 RAW_ENABLE = yes

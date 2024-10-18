@@ -2,6 +2,7 @@
 #include "raw_hid.h"
 #include "host_driver.h"
 #include "pointing_device.h"
+#include "os_detection.h"
 #include "features.h"
 #include "intercepts.h"
 #include "mouse_passthrough_receiver.h"
@@ -525,31 +526,24 @@ void utilities_oneshot_off_task(void) {
 
 void sk_ctrl_down_cb(superkey_state_t* superkey_state) {
     mouse_triggerable_modifier_on(MOUSE_TRIGGERABLE_MODIFIER_CTRL);
-    if (keyboard_state.n_oneshots_active > 0) {
-        keyboard_state.utilities_momentary_mode_is_on = true;
-        layer_on(LAYER_UTILITIES);
-        if (keyboard_state.oneshot_is_active[ONESHOT_CTRL]) {
-            intercept_on(INTERCEPT_CTRL);
+    intercept_on(INTERCEPT_CTRL);
+    if (keyboard_state.oneshot_is_active[ONESHOT_CTRL]) {
+        oneshots_off_task();
+        if (keyboard_state.utilities_oneshot_state != UTILITIES_ONESHOT_STATE_OFF) {
+            utilities_oneshot_off_task();
         }
+        keyboard_state.oneshot_is_locked[ONESHOT_CTRL] = true;
     } else {
-        keyboard_state.utilities_momentary_mode_is_on = false;
-        intercept_on(INTERCEPT_CTRL);
+        keyboard_state.oneshot_is_locked[ONESHOT_CTRL] = false;
     }
 }
 
 void sk_ctrl_up_cb(superkey_state_t* superkey_state) {
     mouse_triggerable_modifier_off();
     intercept_off(INTERCEPT_CTRL);
-    if (keyboard_state.utilities_momentary_mode_is_on) {
-        layer_off(LAYER_UTILITIES);
-    } else {
-        clear_keyboard();
-    }
-    if (keyboard_state.oneshot_is_active[ONESHOT_CTRL]) {
-        oneshots_off_task();
-        if (keyboard_state.utilities_oneshot_state != UTILITIES_ONESHOT_STATE_OFF) {
-            utilities_oneshot_off_task();
-        }
+    clear_keyboard();
+    if (keyboard_state.oneshot_is_locked[ONESHOT_CTRL]) {
+        return;
     } else if (superkey_state->interrupt_result == NO_INTERRUPT && superkey_state->timeout_result == NO_TIMEOUT) {
         oneshot_on_task(ONESHOT_CTRL);
         if (keyboard_state.n_oneshots_active == 1) {
@@ -716,6 +710,12 @@ void sk_alt_down_cb(superkey_state_t* superkey_state) {
     mouse_triggerable_modifier_on(MOUSE_TRIGGERABLE_MODIFIER_ALT);
     layer_on(LAYER_ARROWS);
     intercept_on(INTERCEPT_ARROWS);
+    if (keyboard_state.oneshot_is_active[ONESHOT_ALT]) {
+        oneshots_off_task();
+        keyboard_state.oneshot_is_locked[ONESHOT_ALT] = true;
+    } else {
+        keyboard_state.oneshot_is_locked[ONESHOT_ALT] = false;
+    }
 }
 
 void sk_alt_up_cb(superkey_state_t* superkey_state) {
@@ -741,8 +741,8 @@ void sk_alt_up_cb(superkey_state_t* superkey_state) {
     keyboard_state.arrow_vertical_last_keycode_registered = KC_NO;
     keyboard_state.arrow_vertical_state = ARROW_STATE_CENTER;
 
-    if (keyboard_state.oneshot_is_active[ONESHOT_ALT]) {
-        oneshots_off_task();
+    if (keyboard_state.oneshot_is_locked[ONESHOT_ALT]) {
+        return;
     }
     else if (superkey_state->interrupt_result == NO_INTERRUPT && superkey_state->timeout_result == NO_TIMEOUT) {
         oneshot_on_task(ONESHOT_ALT);
@@ -917,6 +917,17 @@ bool intercept_arrows_cb(uint16_t keycode, bool pressed) {
             }
             if (keyboard_state.selective_modifier_is_active[ARROW_MODIFIER_SELECTIVE_ALT]) {
                 keycode = A(keycode);
+                os_variant_t detected_os = detected_host_os();
+                switch (detected_os) {
+                    case OS_WINDOWS:
+                        keycode = C(keycode);
+                        break;
+                    case OS_LINUX:
+                        keycode = S(keycode);
+                        break;
+                    default:
+                        break;
+                }
             }
             if (keyboard_state.selective_modifier_is_active[ARROW_MODIFIER_SELECTIVE_SHIFT]) {
                 keycode = S(keycode);
@@ -936,6 +947,12 @@ bool intercept_arrows_cb(uint16_t keycode, bool pressed) {
 void sk_gui_down_cb(superkey_state_t* superkey_state) {
     mouse_triggerable_modifier_on(MOUSE_TRIGGERABLE_MODIFIER_GUI);
     layer_on(LAYER_FUNCTION);
+    if (keyboard_state.oneshot_is_active[ONESHOT_GUI]) {
+        oneshots_off_task();
+        keyboard_state.oneshot_is_locked[ONESHOT_GUI] = true;
+    } else {
+        keyboard_state.oneshot_is_locked[ONESHOT_GUI] = false;
+    }
 }
 
 void sk_gui_up_cb(superkey_state_t* superkey_state) {
@@ -947,8 +964,8 @@ void sk_gui_up_cb(superkey_state_t* superkey_state) {
     } else if (superkey_state->multitap_result == TRIPLE_TAP) {
         timeout_off(TIMEOUT_RESET_KEYBOARD);
         mouse_passthrough_send_reset();
-    } else if (keyboard_state.oneshot_is_active[ONESHOT_GUI]) {
-        oneshots_off_task();
+    } else if (keyboard_state.oneshot_is_locked[ONESHOT_GUI]) {
+        return;
     } else if (superkey_state->interrupt_result == NO_INTERRUPT && superkey_state->timeout_result == NO_TIMEOUT) {
         oneshot_on_task(ONESHOT_GUI);
         if (keyboard_state.utilities_oneshot_state != UTILITIES_ONESHOT_STATE_OFF) {

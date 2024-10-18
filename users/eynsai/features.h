@@ -170,6 +170,7 @@ typedef struct keyboard_state_t {
     // oneshots
     uint8_t n_oneshots_active;
     uint8_t last_oneshot_active;
+    bool oneshot_is_locked[N_ONESHOTS];
     bool oneshot_is_active[N_ONESHOTS];
 
     // held modifiers
@@ -199,7 +200,6 @@ typedef struct keyboard_state_t {
     uint8_t arrow_vertical_state;
 
     // utilities layer
-    bool utilities_momentary_mode_is_on;
     uint8_t utilities_oneshot_state;
     bool utilities_ab_undo_is_next;
     bool utilities_ab_undo_is_registered;
