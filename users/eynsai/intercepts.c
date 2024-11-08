@@ -19,3 +19,7 @@ void intercept_on(size_t index) {
 void intercept_off(size_t index) {
     intercepts[index].active = false;
 }
+
+bool intercept_is_on(size_t index) {
+    return intercepts[index].active;
+}

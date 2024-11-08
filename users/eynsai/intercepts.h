@@ -16,4 +16,4 @@ extern const size_t n_intercepts;
 bool intercept_process_record_task(uint16_t keycode, bool pressed);
 void intercept_on(size_t index);
 void intercept_off(size_t index);
-
+bool intercept_is_on(size_t index);

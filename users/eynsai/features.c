@@ -524,7 +524,17 @@ void utilities_oneshot_off_task(void) {
     clear_keyboard();
 }
 
+void timeout_utilities_oneshot_cb(void) {
+    if (keyboard_state.utilities_oneshot_state != UTILITIES_ONESHOT_STATE_HOLDING_FIRST_KEY) {
+        oneshots_off_task();
+        utilities_oneshot_off_task();
+    }
+}
+
 void sk_ctrl_down_cb(superkey_state_t* superkey_state) {
+    if (timeout_is_on(TIMEOUT_UTILITIES_ONESHOT)) {
+        timeout_utilities_oneshot_cb();
+    }
     mouse_triggerable_modifier_on(MOUSE_TRIGGERABLE_MODIFIER_CTRL);
     intercept_on(INTERCEPT_CTRL);
     if (keyboard_state.oneshot_is_active[ONESHOT_CTRL]) {
@@ -691,13 +701,6 @@ bool intercept_utilities_oneshot_cb(uint16_t keycode, bool pressed) {
     return false;
 }
 
-void timeout_utilities_oneshot_cb(void) {
-    if (keyboard_state.utilities_oneshot_state != UTILITIES_ONESHOT_STATE_HOLDING_FIRST_KEY) {
-        oneshots_off_task();
-        utilities_oneshot_off_task();
-    }
-}
-
 // ============================================================================
 // ALT ONESHOT AND ARROW LAYER
 // ============================================================================
@@ -724,25 +727,13 @@ void sk_alt_up_cb(superkey_state_t* superkey_state) {
     intercept_off(INTERCEPT_ARROWS);
 
     // make sure things are cleaned up
-    unregister_code(KC_LALT);
-    unregister_code(KC_LCTL);
-    unregister_code(KC_LSFT);
-    memset(keyboard_state.latched_modifier_is_active, 0, sizeof(keyboard_state.latched_modifier_is_active));
-    memset(keyboard_state.latched_modifier_is_registered, 0, sizeof(keyboard_state.latched_modifier_is_registered));
+    clear_keyboard();
     keyboard_state.n_selective_modifiers_active = 0;
     memset(keyboard_state.selective_modifier_is_active, 0, sizeof(keyboard_state.selective_modifier_is_active));
-    if (keyboard_state.arrow_delete_word_left_is_registered) {
-        keyboard_state.arrow_delete_word_left_is_registered = false;
-        unregister_code16(C(KC_BSPC));
-    }
-    if (keyboard_state.arrow_delete_word_right_is_registered) {
-        keyboard_state.arrow_delete_word_right_is_registered = false;
-        unregister_code16(C(KC_DEL));
-    }
-    unregister_code16(keyboard_state.arrow_horizontal_last_keycode_registered);
+    memset(keyboard_state.latched_modifier_is_active, 0, sizeof(keyboard_state.latched_modifier_is_active));
+    memset(keyboard_state.latched_modifier_is_registered, 0, sizeof(keyboard_state.latched_modifier_is_registered));
     keyboard_state.arrow_horizontal_last_keycode_registered = KC_NO;
     keyboard_state.arrow_horizontal_state = ARROW_STATE_CENTER;
-    unregister_code16(keyboard_state.arrow_vertical_last_keycode_registered);
     keyboard_state.arrow_vertical_last_keycode_registered = KC_NO;
     keyboard_state.arrow_vertical_state = ARROW_STATE_CENTER;
 
@@ -890,21 +881,19 @@ bool intercept_arrows_cb(uint16_t keycode, bool pressed) {
 
         // delete-word keys
         case CK_DWL:
-            if (!pressed) {
-                keyboard_state.arrow_delete_word_left_is_registered = true;
+            if (pressed) {
                 tap_code16(C(KC_BSPC));
             }
             return false;
         case CK_DWR:
-            if (!pressed) {
-                keyboard_state.arrow_delete_word_right_is_registered = true;
+            if (pressed) {
                 tap_code16(C(KC_DEL));
             }
             return false;
 
         // delete-word key
         case CK_DLN:
-            if (!pressed) {
+            if (pressed) {
                 // tap_code(KC_MINUS);  // at one point I thought this was necessary - why?
                 tap_code(KC_END);  // double tapping END deals with weird situations when line wrap is involved
                 tap_code(KC_END);

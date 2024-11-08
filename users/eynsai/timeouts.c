@@ -20,3 +20,7 @@ void timeout_on(size_t index) {
 void timeout_off(size_t index) {
     timeouts[index].active = false;
 }
+
+bool timeout_is_on(size_t index) {
+    return timeouts[index].active;
+}

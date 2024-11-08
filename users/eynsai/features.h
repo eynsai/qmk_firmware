@@ -204,8 +204,6 @@ typedef struct keyboard_state_t {
     bool selective_modifier_is_active[N_SELECTIVE_ARROW_MODIFIERS];
     bool latched_modifier_is_active[N_LATCHED_ARROW_MODIFIERS];
     bool latched_modifier_is_registered[N_LATCHED_ARROW_MODIFIERS];
-    bool arrow_delete_word_left_is_registered;
-    bool arrow_delete_word_right_is_registered;
     uint16_t arrow_horizontal_last_keycode_registered;
     uint8_t arrow_horizontal_state;
     uint16_t arrow_vertical_last_keycode_registered;
