@@ -724,6 +724,11 @@ void sk_alt_up_cb(superkey_state_t* superkey_state) {
     intercept_off(INTERCEPT_ARROWS);
 
     // make sure things are cleaned up
+    unregister_code(KC_LALT);
+    unregister_code(KC_LCTL);
+    unregister_code(KC_LSFT);
+    memset(keyboard_state.latched_modifier_is_active, 0, sizeof(keyboard_state.latched_modifier_is_active));
+    memset(keyboard_state.latched_modifier_is_registered, 0, sizeof(keyboard_state.latched_modifier_is_registered));
     keyboard_state.n_selective_modifiers_active = 0;
     memset(keyboard_state.selective_modifier_is_active, 0, sizeof(keyboard_state.selective_modifier_is_active));
     if (keyboard_state.arrow_delete_word_left_is_registered) {
@@ -833,49 +838,79 @@ bool intercept_arrows_cb(uint16_t keycode, bool pressed) {
             }
             return false;
 
-        // selective modifier keys
+        // custom modifier keys
         case CK_SALT:
             keyboard_state.selective_modifier_is_active[ARROW_MODIFIER_SELECTIVE_ALT] = pressed;
             keyboard_state.n_selective_modifiers_active += pressed ? 1 : -1;
-            break;
+            return false;
         case CK_SCTL:
             keyboard_state.selective_modifier_is_active[ARROW_MODIFIER_SELECTIVE_CTRL] = pressed;
             keyboard_state.n_selective_modifiers_active += pressed ? 1 : -1;
-            break;
+            return false;
         case CK_SSFT:
             keyboard_state.selective_modifier_is_active[ARROW_MODIFIER_SELECTIVE_SHIFT] = pressed;
             keyboard_state.n_selective_modifiers_active += pressed ? 1 : -1;
-            break;
+            return false;
+        case CK_HALT:
+            keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_ALT] = pressed;
+            if ((keyboard_state.arrow_vertical_state == ARROW_STATE_CENTER) && (keyboard_state.arrow_horizontal_state == ARROW_STATE_CENTER)) {
+                if (keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_ALT] && !keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_ALT]) {
+                    keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_ALT] = true;
+                    register_code(KC_LALT);
+                } else if (!keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_ALT] && keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_ALT]) {
+                    keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_ALT] = false;
+                    unregister_code(KC_LALT);
+                }
+            }
+            return false;
+        case CK_HCTL:
+            keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_CTRL] = pressed;
+            if ((keyboard_state.arrow_vertical_state == ARROW_STATE_CENTER) && (keyboard_state.arrow_horizontal_state == ARROW_STATE_CENTER)) {
+                if (keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_CTRL] && !keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_CTRL]) {
+                    keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_CTRL] = true;
+                    register_code(KC_LCTL);
+                } else if (!keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_CTRL] && keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_CTRL]) {
+                    keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_CTRL] = false;
+                    unregister_code(KC_LCTL);
+                }
+            }
+            return false;
+        case CK_HSFT:
+            keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_SHIFT] = pressed;
+            if ((keyboard_state.arrow_vertical_state == ARROW_STATE_CENTER) && (keyboard_state.arrow_horizontal_state == ARROW_STATE_CENTER)) {
+                if (keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_SHIFT] && !keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_SHIFT]) {
+                    keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_SHIFT] = true;
+                    register_code(KC_LSFT);
+                } else if (!keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_SHIFT] && keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_SHIFT]) {
+                    keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_SHIFT] = false;
+                    unregister_code(KC_LSFT);
+                }
+            }
+            return false;
 
         // delete-word keys
         case CK_DWL:
-            if (pressed) {
+            if (!pressed) {
                 keyboard_state.arrow_delete_word_left_is_registered = true;
-                register_code16(C(KC_BSPC));
-            } else {
-                keyboard_state.arrow_delete_word_left_is_registered = false;
-                unregister_code16(C(KC_BSPC));
+                tap_code16(C(KC_BSPC));
             }
             return false;
         case CK_DWR:
-            if (pressed) {
+            if (!pressed) {
                 keyboard_state.arrow_delete_word_right_is_registered = true;
-                register_code16(C(KC_DEL));
-            } else {
-                keyboard_state.arrow_delete_word_right_is_registered = false;
-                unregister_code16(C(KC_DEL));
+                tap_code16(C(KC_DEL));
             }
             return false;
 
         // delete-word key
         case CK_DLN:
-            if (pressed) {
-                tap_code(KC_MINUS);
+            if (!pressed) {
+                // tap_code(KC_MINUS);  // at one point I thought this was necessary - why?
+                tap_code(KC_END);  // double tapping END deals with weird situations when line wrap is involved
                 tap_code(KC_END);
-                tap_code(KC_END);
+                tap_code16(S(KC_HOME));  // double tapping HOME deals with leading whitespace
                 tap_code16(S(KC_HOME));
-                tap_code16(S(KC_HOME));
-                tap_code16(S(KC_LEFT));
+                tap_code16(S(KC_LEFT));  // move to the next line up when deleting
                 tap_code(KC_BSPC);
             }
             return false;
@@ -883,6 +918,30 @@ bool intercept_arrows_cb(uint16_t keycode, bool pressed) {
         // default
         default:
             return true;
+    }
+
+    if ((keyboard_state.arrow_vertical_state == ARROW_STATE_CENTER) && (keyboard_state.arrow_horizontal_state == ARROW_STATE_CENTER)) {
+        if (keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_ALT] && !keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_ALT]) {
+            keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_ALT] = true;
+            register_code(KC_LALT);
+        } else if (!keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_ALT] && keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_ALT]) {
+            keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_ALT] = false;
+            unregister_code(KC_LALT);
+        }
+        if (keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_CTRL] && !keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_CTRL]) {
+            keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_CTRL] = true;
+            register_code(KC_LCTL);
+        } else if (!keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_CTRL] && keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_CTRL]) {
+            keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_CTRL] = false;
+            unregister_code(KC_LCTL);
+        }
+        if (keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_SHIFT] && !keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_SHIFT]) {
+            keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_SHIFT] = true;
+            register_code(KC_LSFT);
+        } else if (!keyboard_state.latched_modifier_is_active[ARROW_MODIFIER_LATCHED_SHIFT] && keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_SHIFT]) {
+            keyboard_state.latched_modifier_is_registered[ARROW_MODIFIER_LATCHED_SHIFT] = false;
+            unregister_code(KC_LSFT);
+        }
     }
 
     if (update_horizontal) {

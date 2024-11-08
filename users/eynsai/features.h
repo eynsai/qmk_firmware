@@ -26,6 +26,9 @@ enum custom_keycodes {
     CK_SALT,            // selective alt modifier
     CK_SCTL,            // selective ctrl modifier
     CK_SSFT,            // selective shift modifier
+    CK_HALT,            // latched alt modifier
+    CK_HCTL,            // latched ctrl modifier
+    CK_HSFT,            // latched shift modifier
     CK_DWL,             // delete word left (ctrl-backspace)
     CK_DWR,             // delete word right (ctrl-delete)
     CK_DLN,             // delete line
@@ -111,7 +114,14 @@ enum selective_arrow_modifiers {
     ARROW_MODIFIER_SELECTIVE_ALT = 0,
     ARROW_MODIFIER_SELECTIVE_CTRL,
     ARROW_MODIFIER_SELECTIVE_SHIFT,
-    N_ARROW_MODIFIERS,
+    N_SELECTIVE_ARROW_MODIFIERS,
+};
+
+enum latched_arrow_modifiers {
+    ARROW_MODIFIER_LATCHED_ALT = 0,
+    ARROW_MODIFIER_LATCHED_CTRL,
+    ARROW_MODIFIER_LATCHED_SHIFT,
+    N_LATCHED_ARROW_MODIFIERS,
 };
 
 enum arrow_states {
@@ -191,7 +201,9 @@ typedef struct keyboard_state_t {
 
     // arrows layer
     uint8_t n_selective_modifiers_active;
-    bool selective_modifier_is_active[N_ARROW_MODIFIERS];
+    bool selective_modifier_is_active[N_SELECTIVE_ARROW_MODIFIERS];
+    bool latched_modifier_is_active[N_LATCHED_ARROW_MODIFIERS];
+    bool latched_modifier_is_registered[N_LATCHED_ARROW_MODIFIERS];
     bool arrow_delete_word_left_is_registered;
     bool arrow_delete_word_right_is_registered;
     uint16_t arrow_horizontal_last_keycode_registered;
