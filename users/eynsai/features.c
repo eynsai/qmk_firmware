@@ -497,6 +497,15 @@ void wheel_adjustment_pointing_device_task(report_mouse_t* mouse_report) {
 // when oneshots are active, the utilities layer is momentary, without support for custom keycodes
 // when oneshots are inactive, the utilities layer is an oneshot that can become persistent
 
+void utilities_oneshot_pointing_device_task(report_mouse_t* mouse_report) {
+    if (!is_dragscroll_on()) {
+        return;
+    }
+    if (mouse_report->h != 0 || mouse_report->v != 0) {
+        keyboard_state.dragscroll_was_used = true;
+    }
+}
+
 void utilities_oneshot_on_task(void) {
     mouse_passthrough_send_pointer_on();
     mouse_passthrough_block_pointer_on();
@@ -505,6 +514,7 @@ void utilities_oneshot_on_task(void) {
     dragscroll_on();
     layer_on(LAYER_UTILITIES);
     intercept_on(INTERCEPT_UTILITIES_ONESHOT);
+    keyboard_state.dragscroll_was_used = false;
     keyboard_state.utilities_oneshot_state = UTILITIES_ONESHOT_STATE_WAITING_FOR_FIRST_KEY;
     keyboard_state.utilities_ab_undo_is_next = true;
 }
@@ -575,6 +585,14 @@ bool intercept_ctrl_cb(uint16_t keycode, bool pressed) {
 }
 
 bool intercept_utilities_oneshot_cb(uint16_t keycode, bool pressed) {
+
+    // if the user has dragscrolled, process the key normally
+    if (is_dragscroll_on() && keyboard_state.dragscroll_was_used) {
+        oneshots_off_task();
+        utilities_oneshot_off_task();
+        return true;
+    }
+
     switch (keycode) {
 
         // exit utilities oneshot

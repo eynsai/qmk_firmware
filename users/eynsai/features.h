@@ -210,6 +210,7 @@ typedef struct keyboard_state_t {
     uint8_t arrow_vertical_state;
 
     // utilities layer
+    bool dragscroll_was_used;
     uint8_t utilities_oneshot_state;
     bool utilities_ab_undo_is_next;
     bool utilities_ab_undo_is_registered;

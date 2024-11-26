@@ -31,7 +31,7 @@
 #define DRAGSCROLL_ACCELERATION_BLEND 0.872116
 #define DRAGSCROLL_ACCELERATION_SCALE 500.0
 
-#define MOUSE_DELAY_DURATION 30
+#define MOUSE_DELAY_DURATION 50
 
 // ============================================================================
 // TAPPING TERMS
