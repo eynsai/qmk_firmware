@@ -20,3 +20,4 @@ void timeout_matrix_scan_task(void);
 void timeout_on(size_t index);
 void timeout_off(size_t index);
 bool timeout_is_on(size_t index);
+bool any_timeout_is_on(void);

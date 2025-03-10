@@ -173,6 +173,11 @@ typedef struct keyboard_state_t {
     // rgb engine
     rgb_state_t rgb_state;
 
+    // lite mode
+
+    bool lite_mode_is_queued;
+    bool lite_mode_is_on;
+
     // base layer switching
     uint8_t current_base_layer;
     bool base_is_locked;

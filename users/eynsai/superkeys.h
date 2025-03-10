@@ -63,3 +63,4 @@ void superkey_init_task(void);
 bool superkey_process_record_task(uint16_t keycode, bool pressed);
 void superkey_matrix_scan_task(void);
 void superkey_inject_interrupt(uint16_t superkey_keycode, uint16_t interrupting_keycode);
+bool any_superkey_is_on(void);

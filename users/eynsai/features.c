@@ -241,6 +241,32 @@ void rgb_oneshots_off_task(void) {
 }
 
 // ============================================================================
+// LITE MODE
+// ============================================================================
+
+void lite_mode_on(void) {
+    if (keyboard_state.lite_mode_is_on) {
+        return;
+    }
+    keyboard_state.lite_mode_is_queued = true;
+}
+
+void lite_mode_off(void) {
+    keyboard_state.lite_mode_is_queued = false;
+    keyboard_state.lite_mode_is_on = false;
+}
+
+void lite_mode_matrix_scan_task(void) {
+    if (keyboard_state.lite_mode_is_on || (!keyboard_state.lite_mode_is_queued) || any_superkey_is_on() || any_timeout_is_on() || (!rgb_is_static(&(keyboard_state.rgb_state)))) {
+        return;
+    }
+    keyboard_state.lite_mode_is_queued = false;
+    keyboard_state.lite_mode_is_on = true;
+    mouse_passthrough_send_buttons_off();
+    mouse_passthrough_block_buttons_off();
+}
+
+// ============================================================================
 // BASE LAYER SWITCHING
 // ============================================================================
 
@@ -260,6 +286,7 @@ void sk_base_down_cb(superkey_state_t* superkey_state) {
         rgb_start_animation(&(keyboard_state.rgb_state), RGB_ANIMATION_BASE_GAMING_TO_WORKMAN);
         keyboard_state.current_base_layer = LAYER_BASE_WORKMAN;
         keyboard_state.base_is_locked = true;
+        lite_mode_off();
         layer_off(LAYER_BASE_GAMING);
     }
 }
@@ -289,6 +316,7 @@ void sk_base_timeout_cb(superkey_state_t* superkey_state) {
         rgb_start_animation(&(keyboard_state.rgb_state), RGB_ANIMATION_BASE_GAMING_FROM_WORKMAN);
         keyboard_state.current_base_layer = LAYER_BASE_GAMING;
         keyboard_state.base_is_locked = true;
+        lite_mode_on();
         layer_on(LAYER_BASE_GAMING);
     }
 }
@@ -473,6 +501,13 @@ void mouse_triggerable_modifier_reset(void) {
 }
 
 void mouse_triggerable_modifier_process_record_user_task(uint16_t keycode) {
+    if (is_mouse_passthrough_connected()) {
+        mouse_passthrough_send_buttons_on();
+        mouse_passthrough_block_buttons_on();
+    } else {
+        mouse_passthrough_send_buttons_off();
+        mouse_passthrough_block_buttons_off();
+    }
     if (!(keycode == KC_LSFT || keycode == KC_RSFT)) {
         mouse_triggerable_modifier_reset();
     }
@@ -1090,18 +1125,15 @@ void keyboard_post_init_user(void) {
     rgb_init_task(&(keyboard_state.rgb_state));
 }
 
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (is_mouse_passthrough_connected()) {
-        mouse_passthrough_send_buttons_on();
-        mouse_passthrough_block_buttons_on();
-    } else {
-        mouse_passthrough_send_buttons_off();
-        mouse_passthrough_block_buttons_off();
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {    
+    if (keyboard_state.lite_mode_is_on) {
+        if (keycode < SAFE_RANGE) {
+            return true;
+        } else if (keycode != SK_BASE) {
+            return false;
+        }
     }
     mouse_triggerable_modifier_process_record_user_task(keycode);
-    // earlier intercepts can prevent later intercepts from being called
-    // earlier superkey interrupts can't prevent later superkey interrupts from being called
-    // intercepts can't prevent superkey interrupts from being called
     bool continue_processing = true;
     if (!intercept_process_record_task(keycode, record->event.pressed)) {
         continue_processing = false;
@@ -1113,10 +1145,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 void matrix_scan_user(void) {
+    if (keyboard_state.lite_mode_is_on) {
+        return;
+    }
+    mouse_passthrough_reciever_matrix_scan_task();
     rgb_matrix_scan_task(&(keyboard_state.rgb_state));
     superkey_matrix_scan_task();
     timeout_matrix_scan_task();
-    mouse_passthrough_reciever_matrix_scan_task();
+    lite_mode_matrix_scan_task();  // must be last
 }
 
 void raw_hid_receive(uint8_t* data, uint8_t length) {

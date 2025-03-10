@@ -83,6 +83,9 @@ void rgb_matrix_scan_task(rgb_state_t* rgb_state) {
         rgb_state->lerp_initial_time = time;
         rgb_simplify(rgb_state);
     }
+
+
+
     // Interpolate from initial to final color
     if HSV_EQUAL(rgb_state->lerp_initial_color, rgb_state->lerp_final_color) {
         rgb_set(rgb_state, rgb_state->lerp_initial_color);
@@ -106,4 +109,8 @@ void rgb_start_animation(rgb_state_t* rgb_state, size_t animation_idx) {
     rgb_state->lerp_initial_idx = 0;
     rgb_state->animation_idx = animation_idx;
     rgb_simplify(rgb_state);
+}
+
+bool rgb_is_static(rgb_state_t* rgb_state) {
+    return (rgb_state->lerp_initial_idx == rgb_state->lerp_final_idx);
 }

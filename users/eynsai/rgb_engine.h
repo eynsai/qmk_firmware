@@ -31,3 +31,4 @@ extern rgb_animation_t rgb_animations[];
 void rgb_init_task(rgb_state_t* rgb_state);
 void rgb_matrix_scan_task(rgb_state_t* rgb_state);
 void rgb_start_animation(rgb_state_t* rgb_state, size_t animation_idx);
+bool rgb_is_static(rgb_state_t* rgb_state);

@@ -24,3 +24,12 @@ void timeout_off(size_t index) {
 bool timeout_is_on(size_t index) {
     return timeouts[index].active;
 }
+
+bool any_timeout_is_on(void) {
+    for (size_t i = 0; i < n_timeouts; i++) {
+        if (timeouts[i].active) {
+            return true;
+        }
+    }
+    return false;
+}

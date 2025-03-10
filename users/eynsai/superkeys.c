@@ -117,3 +117,16 @@ void superkey_inject_interrupt(uint16_t superkey_keycode, uint16_t interrupting_
     superkey_state->interrupt_is_on = false;
     return;
 }
+
+bool any_superkey_is_on(void) {
+    if (superkey_currently_pressed != KC_NO) {
+        return true;
+    }
+    for (size_t i = 0; i < n_superkeys; i++) {
+        superkey_state_t* superkey_state = &(superkeys[i].state);
+        if (superkey_state->timeout_is_on) {
+            return true;
+        }
+    }
+    return false;
+}
