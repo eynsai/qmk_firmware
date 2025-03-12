@@ -536,7 +536,7 @@ void utilities_oneshot_pointing_device_task(report_mouse_t* mouse_report) {
     if (!is_dragscroll_on()) {
         return;
     }
-    if (mouse_report->h != 0 || mouse_report->v != 0) {
+    if (mouse_report->x != 0 || mouse_report->y != 0) {
         keyboard_state.dragscroll_was_used = true;
     }
 }
@@ -621,11 +621,11 @@ bool intercept_ctrl_cb(uint16_t keycode, bool pressed) {
 
 bool intercept_utilities_oneshot_cb(uint16_t keycode, bool pressed) {
 
-    // if the user has dragscrolled, process the key normally
-    if (is_dragscroll_on() && keyboard_state.dragscroll_was_used) {
+    // if the user has dragscrolled, block the key and exit utilities oneshot
+    if ((keycode != SK_CTRL) && is_dragscroll_on() && keyboard_state.dragscroll_was_used) {
         oneshots_off_task();
         utilities_oneshot_off_task();
-        return true;
+        return false;
     }
 
     switch (keycode) {
@@ -1165,6 +1165,7 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
         memset(mouse_report_ptr, 0, sizeof(mouse_report));
         return mouse_report;
     }
+    utilities_oneshot_pointing_device_task(mouse_report_ptr);
     mouse_triggerable_modifier_pointing_device_task(mouse_report_ptr);
     wheel_adjustment_pointing_device_task(mouse_report_ptr);
     return mouse_report;
