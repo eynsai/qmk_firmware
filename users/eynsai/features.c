@@ -254,6 +254,8 @@ void lite_mode_on(void) {
 void lite_mode_off(void) {
     keyboard_state.lite_mode_is_queued = false;
     keyboard_state.lite_mode_is_on = false;
+    mouse_passthrough_send_buttons_on();
+    mouse_passthrough_block_buttons_on();
 }
 
 void lite_mode_matrix_scan_task(void) {
@@ -1131,7 +1133,7 @@ void keyboard_post_init_user(void) {
     rgb_init_task(&(keyboard_state.rgb_state));
 }
 
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {    
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (keyboard_state.lite_mode_is_on) {
         if (keycode < SAFE_RANGE) {
             return true;
