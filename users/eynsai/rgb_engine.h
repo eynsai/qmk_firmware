@@ -9,8 +9,8 @@ typedef struct rgb_animation_t {
     uint32_t start_duration;  // start_duration is the time it takes to interpolate from the current color to colors[0]
     uint32_t durations[RGB_MAX_ANIMATION_SIZE];  // durations[i] is the time it takes to interpolate from colors[i] to colors[i+1]
     HSV colors[RGB_MAX_ANIMATION_SIZE];
-    uint8_t loop_start_idx;  // inclusive
-    uint8_t loop_stop_idx;  // exclusive
+    size_t loop_start_idx;  // inclusive
+    size_t loop_stop_idx;  // exclusive
 } rgb_animation_t;
 
 typedef struct rgb_state_t {
