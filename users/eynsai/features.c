@@ -638,7 +638,7 @@ bool intercept_utilities_oneshot_cb(uint16_t keycode, bool pressed) {
 
     switch (keycode) {
 
-        // exit utilities oneshot
+        // certain special keys trigger a quick exit (without any modifiers)
         case KC_SPC:
         case KC_ENT:
         case KC_BSPC:
@@ -730,8 +730,9 @@ bool intercept_utilities_oneshot_cb(uint16_t keycode, bool pressed) {
             }
             break;
 
-        // default
+        // all other keys fall back on the normal oneshot routine
         default:
+            utilities_oneshot_off_task();
             return true;
     }
 
