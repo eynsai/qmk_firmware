@@ -536,8 +536,12 @@ void utilities_oneshot_pointing_device_task(report_mouse_t* mouse_report) {
     if (!is_dragscroll_on()) {
         return;
     }
-    if (mouse_report->x != 0 || mouse_report->y != 0) {
-        keyboard_state.dragscroll_was_used = true;
+    if (!keyboard_state.dragscroll_was_used) {
+        keyboard_state.dragscroll_displacement_x += abs(mouse_report->x);
+        keyboard_state.dragscroll_displacement_y += abs(mouse_report->y);
+        if (keyboard_state.dragscroll_displacement_x > UTILITIES_DECISION_DEADZONE || keyboard_state.dragscroll_displacement_y > UTILITIES_DECISION_DEADZONE) {
+            keyboard_state.dragscroll_was_used = true;
+        }
     }
 }
 
@@ -549,6 +553,8 @@ void utilities_oneshot_on_task(void) {
     dragscroll_on();
     layer_on(LAYER_UTILITIES);
     intercept_on(INTERCEPT_UTILITIES_ONESHOT);
+    keyboard_state.dragscroll_displacement_x = 0;
+    keyboard_state.dragscroll_displacement_y = 0;
     keyboard_state.dragscroll_was_used = false;
     keyboard_state.utilities_oneshot_state = UTILITIES_ONESHOT_STATE_WAITING_FOR_FIRST_KEY;
     keyboard_state.utilities_ab_undo_is_next = true;

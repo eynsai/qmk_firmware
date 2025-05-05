@@ -31,14 +31,20 @@
 #define DRAGSCROLL_ACCELERATION_BLEND 0.872116
 #define DRAGSCROLL_ACCELERATION_SCALE 500.0
 
-#define MOUSE_DELAY_DURATION 50
 
 // ============================================================================
-// TAPPING TERMS
+// TAPPING TERMS (USER DEFINED SETTINGS)
 // ============================================================================
 
 #define DEFAULT_TAP_TERM 175
 #define DEFAULT_MULTITAP_TERM 175
+
+// ============================================================================
+// MISCELLANEOUS (USER DEFINED SETTINGS)
+// ============================================================================
+
+#define UTILITIES_DECISION_DEADZONE 50
+#define MOUSE_DELAY_DURATION 50
 
 // ============================================================================
 // RGB ANIMATIONS
