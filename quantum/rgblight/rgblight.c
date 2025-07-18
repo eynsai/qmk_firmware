@@ -627,6 +627,100 @@ void rgblight_setrgb(uint8_t r, uint8_t g, uint8_t b) {
         return;
     }
 
+    const float inv255 = 0.003921569f;
+
+    // Convert to normalized float
+    float rf = r * inv255;
+    float gf = g * inv255;
+    float bf = b * inv255;
+
+#if defined(RGBLIGHT_CORRECTION_SCALE_S) || defined(RGBLIGHT_CORRECTION_SCALE_V) || defined(RGBLIGHT_CORRECTION_MAX_S) || defined(RGBLIGHT_CORRECTION_MAX_V)
+    // Compute HSV from original RGB
+    float max = rf;
+    if (gf > max) max = gf;
+    if (bf > max) max = bf;
+
+    float min = rf;
+    if (gf < min) min = gf;
+    if (bf < min) min = bf;
+
+    float delta = max - min;
+
+    float h = 0.0f;
+    if (delta > 0.0f) {
+        if (max == rf) {
+            h = 60.0f * ((gf - bf) / delta);
+            if (gf < bf) h += 360.0f;
+        } else if (max == gf) {
+            h = 60.0f * ((bf - rf) / delta + 2.0f);
+        } else {
+            h = 60.0f * ((rf - gf) / delta + 4.0f);
+        }
+    }
+
+    float s = (max == 0.0f) ? 0.0f : (delta / max);
+    float v = max;
+
+    // Apply S correction and clamp
+#ifdef RGBLIGHT_CORRECTION_SCALE_S
+    s *= RGBLIGHT_CORRECTION_SCALE_S;
+#endif
+#ifdef RGBLIGHT_CORRECTION_MAX_S
+    if (s > RGBLIGHT_CORRECTION_MAX_S) s = RGBLIGHT_CORRECTION_MAX_S;
+#endif
+    if (s > 1.0f) s = 1.0f;
+
+    // Apply V correction and clamp
+#ifdef RGBLIGHT_CORRECTION_SCALE_V
+    v *= RGBLIGHT_CORRECTION_SCALE_V;
+#endif
+#ifdef RGBLIGHT_CORRECTION_MAX_V
+    if (v > RGBLIGHT_CORRECTION_MAX_V) v = RGBLIGHT_CORRECTION_MAX_V;
+#endif
+    if (v > 1.0f) v = 1.0f;
+
+    // HSV to RGB
+    float c = v * s;
+    float h_sector = h / 60.0f;
+    int h_i = (int)h_sector;
+    float f = h_sector - h_i;
+    float x = c * (1.0f - ((h_i & 1) ? f : 1.0f - f));
+    float m = v - c;
+
+    switch (h_i % 6) {
+        case 0: rf = c; gf = x; bf = 0.0f; break;
+        case 1: rf = x; gf = c; bf = 0.0f; break;
+        case 2: rf = 0.0f; gf = c; bf = x; break;
+        case 3: rf = 0.0f; gf = x; bf = c; break;
+        case 4: rf = x; gf = 0.0f; bf = c; break;
+        case 5: rf = c; gf = 0.0f; bf = x; break;
+    }
+
+    rf += m;
+    gf += m;
+    bf += m;
+#endif
+
+    // Apply RGB correction after HSV conversion
+#ifdef RGBLIGHT_CORRECTION_SCALE_R
+    rf *= RGBLIGHT_CORRECTION_SCALE_R;
+#endif
+#ifdef RGBLIGHT_CORRECTION_SCALE_G
+    gf *= RGBLIGHT_CORRECTION_SCALE_G;
+#endif
+#ifdef RGBLIGHT_CORRECTION_SCALE_B
+    bf *= RGBLIGHT_CORRECTION_SCALE_B;
+#endif
+
+    // Final clamping and quantization to uint8_t
+    if (rf > 1.0f) rf = 1.0f;
+    if (gf > 1.0f) gf = 1.0f;
+    if (bf > 1.0f) bf = 1.0f;
+
+    r = (uint8_t)(rf * 255.0f + 0.5f);
+    g = (uint8_t)(gf * 255.0f + 0.5f);
+    b = (uint8_t)(bf * 255.0f + 0.5f);
+
     for (uint8_t i = rgblight_ranges.effect_start_pos; i < rgblight_ranges.effect_end_pos; i++) {
         rgblight_driver.set_color(rgblight_led_index(i), r, g, b);
     }
